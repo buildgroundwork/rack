@@ -15,10 +15,8 @@ module Rack
 
         flattened_params.map do |name, file|
           if file.respond_to?(:original_filename)
-            ::File.open(file.path, 'rb') do |f|
-              f.set_encoding(Encoding::BINARY)
-              content_for_tempfile(f, file, name)
-            end
+            file.binmode
+            content_for_tempfile(file, name)
           else
             content_for_other(file, name)
           end
@@ -69,14 +67,14 @@ module Rack
         end
       end
 
-      def content_for_tempfile(io, file, name)
+      def content_for_tempfile(file, name)
 <<-EOF
 --#{MULTIPART_BOUNDARY}\r
 Content-Disposition: form-data; name="#{name}"; filename="#{Utils.escape(file.original_filename)}"\r
 Content-Type: #{file.content_type}\r
-Content-Length: #{::File.stat(file.path).size}\r
+Content-Length: #{file.size}\r
 \r
-#{io.read}\r
+#{file.read}\r
 EOF
       end
 
@@ -91,3 +89,4 @@ EOF
     end
   end
 end
+
